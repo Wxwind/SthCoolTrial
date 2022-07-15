@@ -3,11 +3,12 @@
 
 static const int numThreads = 8;
 
+//顺序很重要，因为unity左手坐标系，因此要交换三角形的顺逆
 struct Triangle
 {
     float3 vertexA;
-    float3 vertexB;
     float3 vertexC;
+    float3 vertexB;
 };
 
 AppendStructuredBuffer<Triangle> triangles;

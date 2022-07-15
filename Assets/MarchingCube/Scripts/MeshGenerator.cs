@@ -12,7 +12,7 @@ public class MeshGenerator : MonoBehaviour
     
     [Title("Chunk Settings")]
     public Vector3Int numChunks;
-    [Range(2, 50)] public int numPointsPerAxis; //一个chunk内每一个坐标轴上的采样点个数
+    [Range(2, 30)] public int numPointsPerAxis; //一个chunk内每一个坐标轴上的采样点个数
     public float chunkSize = 20;
     public Material chunkMaterial;
     [ShowInInspector] private const int threadGroupSize = 8; //一个chunk内，外层每个线程组要处理的每个轴上的voxel数
@@ -45,7 +45,6 @@ public class MeshGenerator : MonoBehaviour
         {
             if (isRunInEditorMode && !Application.isPlaying)
             {
-                Debug.Log("update mesh");
                 Run();
             }
 
@@ -55,6 +54,7 @@ public class MeshGenerator : MonoBehaviour
 
     public void Run()
     {
+        InitMaterial();
         CreateBuffers();
         InitChunks();
         foreach (var c in m_chunks)
@@ -69,6 +69,12 @@ public class MeshGenerator : MonoBehaviour
         }
     }
 
+    void InitMaterial()
+    {
+        var totalSize = chunkSize * numChunks.y;
+        chunkMaterial.SetFloat("_BoundsY",totalSize);
+    }
+
     void OnValidate()
     {
         m_isSettingsUpdated = true;
@@ -80,7 +86,7 @@ public class MeshGenerator : MonoBehaviour
         }
     }
 
-    public void CreateBuffers()
+    void CreateBuffers()
     {
         int numPoints = numPointsPerAxis * numPointsPerAxis * numPointsPerAxis;
         int numVoxelsPerAxis = numPointsPerAxis - 1;
@@ -109,7 +115,7 @@ public class MeshGenerator : MonoBehaviour
         }
     }
 
-    public void InitChunks()
+    void InitChunks()
     {
         CreateChunkList();
         List<Chunk> oldChunks = new List<Chunk>(FindObjectsOfType<Chunk>());
@@ -149,7 +155,7 @@ public class MeshGenerator : MonoBehaviour
         }
     }
 
-    public void UpdateChunkMesh(Chunk chunk)
+    void UpdateChunkMesh(Chunk chunk)
     {
         int numVoxelsPerAxis = numPointsPerAxis - 1; //一个chunk内每个坐标轴上有多少voxel
         int numThreadsPerAxis = Mathf.CeilToInt(numVoxelsPerAxis / (float) threadGroupSize); //一个chunk内，外层线程组每个轴上的线程组数量,如果采用FloorToInt可能会导致线程处理不到所有的数据
@@ -161,9 +167,13 @@ public class MeshGenerator : MonoBehaviour
             worldBounds);//使用NoiseDensity ComputeShader填充m_pointsBuffer, xyz为坐标,w为isolevel
         m_triangleBuffer.SetCounterValue(0);
         
-        Vector4[] Farray = new Vector4[numPointsPerAxis * numPointsPerAxis * numPointsPerAxis];
-        m_pointsBuffer.GetData(Farray,0,0,numPointsPerAxis * numPointsPerAxis * numPointsPerAxis);
-
+        // Vector4[] Farray = new Vector4[numPointsPerAxis * numPointsPerAxis * numPointsPerAxis];
+        // m_pointsBuffer.GetData(Farray,0,0,numPointsPerAxis * numPointsPerAxis * numPointsPerAxis);
+        // foreach (var a in Farray)
+        // {
+        //     Debug.Log(a);
+        // }
+        
         marchingCubesShader.SetBuffer(0, "points", m_pointsBuffer);
         marchingCubesShader.SetBuffer(0, "triangles", m_triangleBuffer);
         marchingCubesShader.SetInt("numPointsPerAxis", numPointsPerAxis);
