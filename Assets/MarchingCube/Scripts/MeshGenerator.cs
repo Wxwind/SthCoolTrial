@@ -11,7 +11,7 @@ public class MeshGenerator : MonoBehaviour
     public bool isRunInEditorMode;
     
     [Title("Chunk Settings")]
-    public Vector3Int numChunks;
+    public Vector3Int numChunks;//chunk在每个轴上的个数
     [Range(2, 30)] public int numPointsPerAxis; //一个chunk内每一个坐标轴上的采样点个数
     public float chunkSize = 20;
     public Material chunkMaterial;
@@ -23,7 +23,7 @@ public class MeshGenerator : MonoBehaviour
     public ComputeShader marchingCubesShader;
 
     [Title("Voxel Settings")] 
-    public float isoLevel;
+    public float isoLevel;//只有大于该值的voxel顶点才会参与计算(使该voxel顶点处于生最终成的形体内部)
     public Vector3 offset = Vector3.zero;
     
     [Title("Bound Visualization")] 
@@ -33,7 +33,7 @@ public class MeshGenerator : MonoBehaviour
 
     private const string m_chunkListName = "ChunkManager";
     private GameObject m_chunkManager;
-    private bool m_isSettingsUpdated;
+    public bool isSettingsUpdated;
 
     private ComputeBuffer m_triangleBuffer;
     private ComputeBuffer m_triCountBuffer;
@@ -41,14 +41,14 @@ public class MeshGenerator : MonoBehaviour
     
     private void Update()
     {
-        if (m_isSettingsUpdated)
+        if (isSettingsUpdated)
         {
             if (isRunInEditorMode && !Application.isPlaying)
             {
                 Run();
             }
 
-            m_isSettingsUpdated = false;
+            isSettingsUpdated = false;
         }
     }
 
@@ -77,7 +77,7 @@ public class MeshGenerator : MonoBehaviour
 
     void OnValidate()
     {
-        m_isSettingsUpdated = true;
+        isSettingsUpdated = true;
     }
     
     void OnDestroy () {
@@ -119,6 +119,8 @@ public class MeshGenerator : MonoBehaviour
     {
         CreateChunkList();
         List<Chunk> oldChunks = new List<Chunk>(FindObjectsOfType<Chunk>());
+        //Debug.Log("old chunks count:"+oldChunks.Count);
+        
         //在editor模式下chunks不为null，但开始运行后m_chunks丢失引用
         m_chunks = new List<Chunk>();
 
@@ -216,9 +218,16 @@ public class MeshGenerator : MonoBehaviour
         //
         // Debug.Log(ta);
         // Debug.Log(o);
+        //Debug.Log(triangles.Length);
         mesh.vertices = vertices;
         mesh.triangles = triangles;
         mesh.RecalculateNormals();
+        string nors=String.Empty;
+        // foreach (var a in mesh.normals)
+        // {
+        //     nors += a.ToString()+"\n";
+        // }
+        // Debug.Log(nors);
     }
 
     struct Triangle

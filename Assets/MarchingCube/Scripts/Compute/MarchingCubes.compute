@@ -3,22 +3,27 @@
 
 static const int numThreads = 8;
 
-//顺序很重要，因为unity左手坐标系，因此要交换三角形的顺逆
+//顺序很重要，unity为左手坐标系，但左右手对三角形顺序没影响。
+//以包围点3为例，3对应1000，即8，查triangulation[8]= 3 11 2，
+//在右手坐标系中根据右手定则可知正确
+//在左手坐标系中根据左手定则也能确定三角形朝向正确
+//而y轴越大isoLevel越大，因此顺序为ABC
 struct Triangle
 {
     float3 vertexA;
-    float3 vertexC;
     float3 vertexB;
+    float3 vertexC;
 };
 
 AppendStructuredBuffer<Triangle> triangles;
+//xyz是voxel顶点坐标，w是该点的isoLevel
 RWStructuredBuffer<float4> points;
 
 int numPointsPerAxis;
 float isoLevel;
 
 
-/*/
+/* In Source Particle
    y
        4--------5     *---4----*
       /|       /|    /|       /|
@@ -33,7 +38,22 @@ float isoLevel;
    3--------2     *---2----*   ---->x
 */
 
-//w分量即isoLevel(用于与等值面比较的值)
+/* In Unity
+   y
+       7--------6     *---6----*
+      /|       /|    /|       /|
+     / |      / |   7 |      5 |
+    /  |     /  |  / 11     /  10
+   4--------5   | *----4---*   |
+   |   |  z |   | |   |    |   |
+   |   3----|---2 |   *---2|---*
+   |  /     |  /  8  /     9  /
+   | /      | /   | 3      | 1
+   |/       |/    |/       |/
+   0--------1     *---0----*   ---->x
+*/
+
+//w分量即该点的isoLevel(用于与等值面比较的值)
 float3 isoLerp(float4 a, float4 b)
 {
     float t = (isoLevel - a.w) /(b.w- a.w);
@@ -52,6 +72,7 @@ int indexFromCoord(int x, int y, int z)
 //GroupId           :外层线程id,由dispatch(kernelIndex,a,b,c)定义
 //NumThreads        :内层线程数，由[numthreads(a,b,c)]定义
 //GroupThreadID     :当前线程在内层线程编号
+//一个voxel调用一次MarchingCubes函数
 [numthreads(numThreads,numThreads,numThreads)]
 void MarchingCubes(int3 id : SV_DispatchThreadID)
 {
@@ -64,7 +85,7 @@ void MarchingCubes(int3 id : SV_DispatchThreadID)
         return;
     }
 
-    //每个采样点所在voxel的8个顶点，注意要从图示的右手坐标系转换到unity的左手坐标系，因此Z轴取反
+    //每个采样点所在voxel的8个顶点，注意要从原文的右手坐标系转换到unity的左手坐标系，因此Z轴取反
     float4 cubeCorners[8] = {
         points[indexFromCoord(id.x, id.y, id.z)],
         points[indexFromCoord(id.x + 1, id.y, id.z)],
@@ -75,18 +96,9 @@ void MarchingCubes(int3 id : SV_DispatchThreadID)
         points[indexFromCoord(id.x + 1, id.y + 1, id.z + 1)],
         points[indexFromCoord(id.x, id.y + 1, id.z + 1)]
     };
-    // float4 cubeCorners[8] = {
-    //     points[indexFromCoord(id.x, id.y, id.z + 1)],
-    //     points[indexFromCoord(id.x + 1, id.y, id.z + 1)],
-    //     points[indexFromCoord(id.x + 1, id.y, id.z)],
-    //     points[indexFromCoord(id.x, id.y, id.z)],
-    //     points[indexFromCoord(id.x, id.y + 1, id.z + 1)],
-    //     points[indexFromCoord(id.x + 1, id.y + 1, id.z + 1)],
-    //     points[indexFromCoord(id.x + 1, id.y + 1, id.z)],
-    //     points[indexFromCoord(id.x, id.y + 1, id.z)]
-    // };
 
     int cubeIndex = 0;
+    //小于isoLevel的顶点都处于最终生成的形体内部
     for (int k = 0; k < 8; k++)
     {
         if (cubeCorners[k].w < isoLevel)

@@ -36,7 +36,7 @@ Shader "Custom/ColorGrad"
             float4 _MainTex_ST;
             float4 _Diffuse;
             float4 _Specular;
-            float4 _Gloss;
+            float _Gloss;
             float _EnvScale;
             float _BoundsY;
             
@@ -88,15 +88,16 @@ Shader "Custom/ColorGrad"
 
                 //高光反射
                 half3 specular = Clight * mainColor * _Specular * pow(max(0, dot(H, N)), _Gloss);
-
+              
                 //环境光
                 half3 reflWS = reflect(-V, o.normalWS.xyz);
                 real3 envreflColor = texCUBE(_Cubemap, reflWS).rgb * _EnvScale;
 
-                real3 blinnPhong = diffuse + specular + envreflColor;
-                real3 res = (real3)gradColor * blinnPhong;
+                real3 blinnPhong = diffuse + max(0,specular) + envreflColor;
+                real3 res = gradColor.xyz * blinnPhong;
 
-                return real4(res, 1);
+                return real4(res,1);
+                //return b;
             }
             ENDHLSL
         }

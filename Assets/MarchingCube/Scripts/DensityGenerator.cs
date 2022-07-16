@@ -17,7 +17,7 @@ namespace MarchingCube.Scripts
         public float noiseScale = 1; //frequency的缩放系数
         public float noiseWeight = 1;
         public bool closeEdges;
-        public float floorOffset = 1;
+        public float isoLevelOffset = 1;//对每个voxel顶点的isoLevel减去偏移，这也意味着值越大，那么形体会包住更多的顶点
         public float weightMultiplier = 1;
 
         public float hardFloorHeight;
@@ -35,7 +35,7 @@ namespace MarchingCube.Scripts
         {
             m_buffersToRelease = new List<ComputeBuffer>();
 
-            // Noise parameters
+            // 不同频率的波相位不同(随机产生offset来改变相位)
             var prng = new System.Random(seed);
             var offsets = new Vector3[numOctaves];
             float offsetRange = 1000;
@@ -57,7 +57,7 @@ namespace MarchingCube.Scripts
             NoiseDensityShader.SetFloat("noiseScale", noiseScale);
             NoiseDensityShader.SetFloat("noiseWeight", noiseWeight);
             NoiseDensityShader.SetBuffer(0, "offsets", offsetsBuffer);
-            NoiseDensityShader.SetFloat("floorOffset", floorOffset);
+            NoiseDensityShader.SetFloat("isoLevelOffset", isoLevelOffset);
             NoiseDensityShader.SetFloat("weightMultiplier", weightMultiplier);
             NoiseDensityShader.SetFloat("hardFloor", hardFloorHeight);
             NoiseDensityShader.SetFloat("hardFloorWeight", hardFloorWeight);
@@ -81,9 +81,10 @@ namespace MarchingCube.Scripts
             return pointsBuffer;
         }
 
+        //如果直接调用MeshGenerator.Run则会在unity启动时报错SendMessage cannot be called during Awake, CheckConsistency, or OnValidate
         private void OnValidate()
         {
-            GameObject.FindObjectOfType<MeshGenerator>().Run();
+            GameObject.FindObjectOfType<MeshGenerator>().isSettingsUpdated=true;
         }
     }
 }

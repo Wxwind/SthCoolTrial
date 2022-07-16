@@ -22,7 +22,7 @@ float lacunarity;
 float persistence;
 float noiseScale;
 float noiseWeight;
-float floorOffset;
+float isoLevelOffset;
 float weightMultiplier;
 float hardFloor;
 float hardFloorWeight;
@@ -58,11 +58,13 @@ void NoiseDensity (int3 id : SV_DispatchThreadID)
         frequency *= lacunarity;
     }
     
-    float finalVal = -(pos.y + floorOffset) + noise * noiseWeight + (pos.y%params.x) * params.y;
+    //float finalVal = (pos.y + floorOffset) + noise * noiseWeight + (pos.y%params.x) * params.y;
+    //令y越大该点的isoLevel越大，这样保证只会生成一层地形，而且
+    float finalVal = pos.y - isoLevelOffset + noise * noiseWeight;
 
-    if (pos.y < hardFloor) {
-        finalVal += hardFloorWeight;
-    }
+    // if (pos.y < hardFloor) {
+    //     finalVal += hardFloorWeight;
+    // }
 
     int index = indexFromCoord(id.x,id.y,id.z);
     points[index] = float4(pos, finalVal);
