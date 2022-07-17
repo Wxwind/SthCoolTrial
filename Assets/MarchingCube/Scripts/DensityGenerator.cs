@@ -16,9 +16,9 @@ namespace MarchingCube.Scripts
         public float gain = .5f;//幅度变化系数
         public float noiseFrequency = 5; //frequency的缩放系数=noiseFrequency/100
         public float noiseWeight = 1;
-        public bool closeEdges;
+        //public bool closeEdges;
         public float isoLevelOffset = 1;//对每个voxel顶点的isoLevel减去偏移，这也意味着值越大，那么形体会包住更多的顶点
-        public float weightMultiplier = 1;
+        //public float weightMultiplier = 1;
 
         // public float hardFloorHeight;
         // public float hardFloorWeight;
@@ -58,7 +58,7 @@ namespace MarchingCube.Scripts
             NoiseDensityShader.SetFloat("noiseWeight", noiseWeight);
             NoiseDensityShader.SetBuffer(0, "offsets", offsetsBuffer);
             NoiseDensityShader.SetFloat("isoLevelOffset", isoLevelOffset);
-            NoiseDensityShader.SetFloat("weightMultiplier", weightMultiplier);
+            //NoiseDensityShader.SetFloat("weightMultiplier", weightMultiplier);
             // NoiseDensityShader.SetFloat("hardFloor", hardFloorHeight);
             // NoiseDensityShader.SetFloat("hardFloorWeight", hardFloorWeight);
             //NoiseDensityShader.SetVector("params", shaderParams);

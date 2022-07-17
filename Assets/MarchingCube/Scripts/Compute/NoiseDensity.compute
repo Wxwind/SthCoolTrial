@@ -24,7 +24,7 @@ float _Gain;
 float _Frequency;
 float noiseWeight;
 float isoLevelOffset;
-float weightMultiplier;
+//float weightMultiplier;
 // float hardFloor;
 // float hardFloorWeight;
 //float4 params;
