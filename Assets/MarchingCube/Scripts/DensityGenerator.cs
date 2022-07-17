@@ -11,19 +11,19 @@ namespace MarchingCube.Scripts
     {
         [Header("Noise FBM Settings")] public int seed;
         [MinValue(1)]
-        public int numOctaves = 4;
-        public float lacunarity = 2;
-        public float persistence = .5f;
-        public float noiseScale = 1; //frequency的缩放系数
+        public int octaves = 4;//分型个数
+        public float lacunarity = 2;//频率变化系数
+        public float gain = .5f;//幅度变化系数
+        public float noiseFrequency = 5; //frequency的缩放系数=noiseFrequency/100
         public float noiseWeight = 1;
         public bool closeEdges;
         public float isoLevelOffset = 1;//对每个voxel顶点的isoLevel减去偏移，这也意味着值越大，那么形体会包住更多的顶点
         public float weightMultiplier = 1;
 
-        public float hardFloorHeight;
-        public float hardFloorWeight;
-
-        public Vector4 shaderParams;
+        // public float hardFloorHeight;
+        // public float hardFloorWeight;
+        //
+        // public Vector4 shaderParams;
 
         [ShowInInspector] const int threadGroupSize = 8;
 
@@ -37,9 +37,9 @@ namespace MarchingCube.Scripts
 
             // 不同频率的波相位不同(随机产生offset来改变相位)
             var prng = new System.Random(seed);
-            var offsets = new Vector3[numOctaves];
+            var offsets = new Vector3[octaves];
             float offsetRange = 1000;
-            for (int i = 0; i < numOctaves; i++)
+            for (int i = 0; i < octaves; i++)
             { 
                 offsets[i] = new Vector3((float) prng.NextDouble() * 2 - 1, (float) prng.NextDouble() * 2 - 1,(float) prng.NextDouble() * 2 - 1) * offsetRange;
                //offsets[i] = new Vector3(0.5f, 0.5f, 0.5f);
@@ -51,17 +51,17 @@ namespace MarchingCube.Scripts
 
             //Noise FBM Settings
             NoiseDensityShader.SetVector("centre", center);
-            NoiseDensityShader.SetInt("octaves", Mathf.Max (1, numOctaves));
-            NoiseDensityShader.SetFloat("lacunarity", lacunarity);
-            NoiseDensityShader.SetFloat("persistence", persistence);
-            NoiseDensityShader.SetFloat("noiseScale", noiseScale);
+            NoiseDensityShader.SetInt("_Octaves", Mathf.Max (1, octaves));
+            NoiseDensityShader.SetFloat("_Lacunarity", lacunarity);
+            NoiseDensityShader.SetFloat("_Gain", gain);
+            NoiseDensityShader.SetFloat("_Frequency", noiseFrequency);
             NoiseDensityShader.SetFloat("noiseWeight", noiseWeight);
             NoiseDensityShader.SetBuffer(0, "offsets", offsetsBuffer);
             NoiseDensityShader.SetFloat("isoLevelOffset", isoLevelOffset);
             NoiseDensityShader.SetFloat("weightMultiplier", weightMultiplier);
-            NoiseDensityShader.SetFloat("hardFloor", hardFloorHeight);
-            NoiseDensityShader.SetFloat("hardFloorWeight", hardFloorWeight);
-            NoiseDensityShader.SetVector("params", shaderParams);
+            // NoiseDensityShader.SetFloat("hardFloor", hardFloorHeight);
+            // NoiseDensityShader.SetFloat("hardFloorWeight", hardFloorWeight);
+            //NoiseDensityShader.SetVector("params", shaderParams);
 
             //Noise Data
             NoiseDensityShader.SetBuffer(0, "points", pointsBuffer);

@@ -41,7 +41,7 @@ float4 taylorInvSqrt(float4 r)
 }
 
 //simplexNoise噪声，可参考冯乐乐的https://blog.csdn.net/candycat1992/article/details/50346469
-float simpelxNoise(float3 v)
+float simplexNoise(float3 v)
 {
     const float2 C = float2(1.0 / 6.0, 1.0 / 3.0);
 
@@ -114,7 +114,7 @@ float simpelxNoise(float3 v)
     return 42.0 * dot(m, px);
 }
 
-float4 simpelxNoise_grad(float3 v)
+float4 simplexNoise_grad(float3 v)
 {
     const float2 C = float2(1.0 / 6.0, 1.0 / 3.0);
 
