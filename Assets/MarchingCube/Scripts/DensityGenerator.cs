@@ -30,7 +30,7 @@ namespace MarchingCube.Scripts
         public ComputeShader NoiseDensityShader;
         private List<ComputeBuffer> m_buffersToRelease;
 
-        public ComputeBuffer Generate(ComputeBuffer pointsBuffer, int numPointsPerAxis, float chunkSize, Vector3 center,
+        public ComputeBuffer Generate(ComputeBuffer pointsBuffer, int numPointsPerAxis, float chunkSize, Vector3 chunkCenter,
             Vector3 offset, float voxelSize, Vector3 worldBounds)
         {
             m_buffersToRelease = new List<ComputeBuffer>();
@@ -50,7 +50,7 @@ namespace MarchingCube.Scripts
             m_buffersToRelease.Add(offsetsBuffer);
 
             //Noise FBM Settings
-            NoiseDensityShader.SetVector("centre", center);
+            NoiseDensityShader.SetVector("centre", chunkCenter);
             NoiseDensityShader.SetInt("_Octaves", Mathf.Max (1, octaves));
             NoiseDensityShader.SetFloat("_Lacunarity", lacunarity);
             NoiseDensityShader.SetFloat("_Gain", gain);
@@ -67,7 +67,7 @@ namespace MarchingCube.Scripts
             NoiseDensityShader.SetBuffer(0, "points", pointsBuffer);
             NoiseDensityShader.SetInt("numPointsPerAxis", numPointsPerAxis);
             NoiseDensityShader.SetFloat("chunkSize", chunkSize);
-            NoiseDensityShader.SetVector("center", center);
+            NoiseDensityShader.SetVector("chunkCenter", chunkCenter);
             NoiseDensityShader.SetVector("offset", offset);
             NoiseDensityShader.SetFloat("voxelSize", voxelSize);
             NoiseDensityShader.SetVector("worldSize", worldBounds);

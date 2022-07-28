@@ -56,7 +56,7 @@ float isoLevel;
 //w分量即该点的isoLevel(用于与等值面比较的值)
 float3 isoLerp(float4 a, float4 b)
 {
-    float t = (isoLevel - a.w) /(b.w- a.w);
+    float t = (isoLevel - a.w) / (b.w - a.w);
     return a.xyz + t * (b.xyz - a.xyz);
 }
 
@@ -107,21 +107,27 @@ void MarchingCubes(int3 id : SV_DispatchThreadID)
         }
     }
 
-    for (int i = 0; triangulation[cubeIndex][i] != -1; i += 3)
+    int edgeIndices[16] = triangulation[cubeIndex];
+    for (int i = 0; i < 16; i += 3)
     {
-        int a0 = cornerIndexAFromEdge[triangulation[cubeIndex][i]];
-        int b0 = cornerIndexBFromEdge[triangulation[cubeIndex][i]];
+        if (edgeIndices[i] == -1) { break; }
 
-        int a1 = cornerIndexAFromEdge[triangulation[cubeIndex][i + 1]];
-        int b1 = cornerIndexBFromEdge[triangulation[cubeIndex][i + 1]];
+        int edgeIndexA = edgeIndices[i];
+        int a0 = cornerIndexAFromEdge[edgeIndexA];
+        int a1 = cornerIndexBFromEdge[edgeIndexA];
 
-        int a2 = cornerIndexAFromEdge[triangulation[cubeIndex][i + 2]];
-        int b2 = cornerIndexBFromEdge[triangulation[cubeIndex][i + 2]];
+        int edgeIndexB = edgeIndices[i+1];
+        int b0 = cornerIndexAFromEdge[edgeIndexB];
+        int b1 = cornerIndexBFromEdge[edgeIndexB];
+
+        int edgeIndexC = edgeIndices[i+2];
+        int c0 = cornerIndexAFromEdge[edgeIndexC];
+        int c1 = cornerIndexBFromEdge[edgeIndexC];
 
         Triangle tri;
-        tri.vertexA = isoLerp(cubeCorners[a0], cubeCorners[b0]);
-        tri.vertexB = isoLerp(cubeCorners[a1], cubeCorners[b1]);
-        tri.vertexC = isoLerp(cubeCorners[a2], cubeCorners[b2]);
+        tri.vertexA = isoLerp(cubeCorners[a0], cubeCorners[a1]);
+        tri.vertexB = isoLerp(cubeCorners[b0], cubeCorners[b1]);
+        tri.vertexC = isoLerp(cubeCorners[c0], cubeCorners[c1]);
         triangles.Append(tri);
     }
 }

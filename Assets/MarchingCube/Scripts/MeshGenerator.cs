@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using MarchingCube.Scripts;
 using Sirenix.OdinInspector;
+using Unity.Mathematics;
 using UnityEngine;
 
 [ExecuteInEditMode]
@@ -189,18 +190,19 @@ public class MeshGenerator : MonoBehaviour
         int[] triCountArray = {0};
         m_triCountBuffer.GetData(triCountArray); 
         int numTriangles = triCountArray[0];
-        Triangle[] tris = new Triangle[numTriangles];
-        m_triangleBuffer.GetData(tris, 0, 0, numTriangles);
+        Triangle[] triangleDataArray = new Triangle[numTriangles];
+        m_triangleBuffer.GetData(triangleDataArray, 0, 0, numTriangles);
 
         Mesh mesh = chunk.mesh;
         mesh.Clear();
+        
         var vertices = new Vector3[numTriangles * 3];
         var triangles = new int[numTriangles * 3];
         for (int i = 0; i < numTriangles; i++)
         {
             for (int j = 0; j < 3; j++)
             {
-                vertices[i * 3 + j] = tris[i][j];
+                vertices[i * 3 + j] = triangleDataArray[i][j];
                 triangles[i * 3 + j] = i * 3 + j;
             }
         }
