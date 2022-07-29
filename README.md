@@ -17,6 +17,6 @@
 
 # PBR Material
 
-原理见[PBR理论详解](https://editor.csdn.net/md/?articleId=120005768)
+原理见[PBR理论详解](https://blog.csdn.net/wsWind/article/details/120005768)
 
 ![效果展示](https://github.com/Wxwind/SthCoolTrial/blob/master/Image/PBRMaterial.png)
