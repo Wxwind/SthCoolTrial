@@ -10,10 +10,9 @@ Shader "Custom/CustomPBR"
         //[NoScaleOffset]_AO ("AO", range(0, 1)) = 0
         [NoScaleOffset]_MaskMap ("Mask", 2D) = "white" { }
         //[NoScaleOffset]_Roughness ("Roughness", 2D) = "white"{}
-        _Roughness ("perceptualRoughness", range(0, 1)) = 1 //被人体直观感知到的线性变化的粗糙度
+        _Smooth ("Smooth", range(0, 1)) = 1 //被人体直观感知到的线性变化的光滑度/1-感知粗糙度perceptualSmoothness
         _Bumpscale ("Bumpscale", range(0, 1)) = 1
         _Metallic ("Metallic", range(0, 1)) = 1
-
     }
     SubShader
     {
@@ -36,7 +35,7 @@ Shader "Custom/CustomPBR"
                 float _Bumpscale;
                 float _Metallic;
                 float4 _BaseColor;
-                float _Roughness;
+                float _Smooth;
                 //float _AO;
             CBUFFER_END
             sampler2D _Albedo;
@@ -86,29 +85,20 @@ Shader "Custom/CustomPBR"
             {
                 //return F0 + saturate(1 - roughness - F0) * pow(clamp(1.0 - NdotV, 0.0, 1.0), 5.0);
                 return F0 + saturate(1 - roughness - F0) * exp2((-5.55473 * NdotV - 6.98316) * NdotV);//拟合
+
             }
 
+            //从unity_SpecCube0采样
+            float3 MyGlossyEnvironmentReflection(half3 normalWS, float3 viewWS, half perceptualRoughness, half AO)//line 589 in Lighting.hlsl
 
-            float3 IndirSpeCube(float3 normalWS, float3 viewWS, float roughness, float AO)//==GlossyEnvironmentReflection
-            {
-                float3 reflectDirWS = reflect(-viewWS, normalWS);
-                roughness = roughness * (1.7 - 0.7 * roughness);//Unity内部不是线性 调整下拟合曲线求近似
-                float MidLevel = roughness * 6;//把粗糙度remap到0-6 7个阶级 然后进行lod采样
-                float4 speColor = SAMPLE_TEXTURECUBE_LOD(unity_SpecCube0, samplerunity_SpecCube0, reflectDirWS, MidLevel);//根据不同的等级进行采样
-                #if !defined(UNITY_USE_NATIVE_HDR)
-                    return DecodeHDREnvironment(speColor, unity_SpecCube0_HDR) * AO;//用DecodeHDREnvironment将颜色从HDR编码下解码。可以看到采样出的rgbm是一个4通道的值，最后一个m存的是一个参数，解码时将前三个通道表示的颜色乘上xM^y，x和y都是由环境贴图定义的系数，存储在unity_SpecCube0_HDR这个结构中。
-                #else
-                    return speColor.xyz * AO;
-                #endif
-            }
-
-            float3 MyGlossyEnvironmentReflection(half3 normalWS,float3 viewWS, half perceptualRoughness, half occlusion)//line 589 in Lighting.hlsl
             {
                 float3 reflectVector = reflect(-viewWS, normalWS);
-                return GlossyEnvironmentReflection(reflectVector, perceptualRoughness, occlusion);
+                return GlossyEnvironmentReflection(reflectVector, perceptualRoughness, AO);
             }
 
+            //得到反射率
             half3 MyReflectivitySpecular(half3 specular)//line 270 in Lighting.hlsl
+
             {
                 #if defined(SHADER_API_GLES)
                     return specular.r;
@@ -119,6 +109,7 @@ Shader "Custom/CustomPBR"
             }
 
             half3 MyEnvironmentBRDFSpecular(float roughness2, float smoothness, half3 F0, float NdotV)//line 371 in Lighting.glsl
+
             {
                 half fresnelTerm = Pow4(1.0 - NdotV);
                 float surfaceReduction = 1.0 / (roughness2 * roughness2 + 1.0);
@@ -128,7 +119,7 @@ Shader "Custom/CustomPBR"
 
                 return surfaceReduction * lerp(F0, grazingTerm, fresnelTerm);
             }
- 
+            
 
             struct a2v
             {
@@ -166,12 +157,13 @@ Shader "Custom/CustomPBR"
             {
                 //提取mask贴图中的金属度，AO和粗糙度
                 float4 Mask = SAMPLE_TEXTURE2D(_MaskMap, sampler_MaskMap, i.uv.zw);
-                float Metallic = _Metallic;//Mask.r
+                float Metallic = Mask.r;//Mask.r/_Metallic
                 float AO = Mask.g;
-                float Roughness =_Roughness;//这里的Roughness等价于unity源码中的perceptualSmoothness
+                float smoothness = Mask.a;///Mask.a/_Smooth
+                float Roughness = 1- smoothness;//这里的Roughness等价于unity源码中的perceptualSmoothness
                 //这里的Roughness2等价于unity源码中的roughness,Roughness平方主要是考虑到人眼对粗糙度的感知是非线性的
-                float Roughness2 = Roughness*Roughness;
-                float smoothness = 1-_Roughness;///Mask.a
+                float Roughness2 = Roughness * Roughness;
+                
 
                 Light light = GetMainLight();
                 half3 Clight = light.color;
@@ -224,8 +216,9 @@ Shader "Custom/CustomPBR"
 
                 //间接光高光反射
                 float3 reflectDir = reflect(-V, N);
-                float3 IndirSpeCubeColor = IndirSpeCube(N, V, Roughness2, AO);
-                float3 Indir_Specular = MyEnvironmentBRDFSpecular(Roughness2, smoothness,F0, NdotV) * IndirSpeCubeColor;
+                float3 IndirSpeEnvColor = MyGlossyEnvironmentReflection(N, V, Roughness2, AO);
+                float3 IndirSpeFactor = MyEnvironmentBRDFSpecular(Roughness2, smoothness, F0, NdotV);
+                float3 Indir_Specular = IndirSpeFactor * IndirSpeEnvColor;
 
                 //间接光
                 float3 kS = FresnelSchlickRoughness(NdotV, F0, Roughness);
