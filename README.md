@@ -11,11 +11,12 @@
 
 参考资料
 
-[Polygonising a scalar field](README/polygonise)
-
 [Coding Adventure: Marching Cubes](https://www.youtube.com/watch?v=M3iI2l0ltbE)
 
 [Coding Adventure: Terraforming](https://www.youtube.com/watch?v=vTMEdHcKgM4)
 
+# PBR Material
 
+原理见[PBR理论详解](https://editor.csdn.net/md/?articleId=120005768)
 
+![效果展示](https://github.com/Wxwind/SthCoolTrial/blob/master/Image/PBRMaterial.png)
